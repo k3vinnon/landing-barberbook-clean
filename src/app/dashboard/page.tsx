@@ -5,7 +5,7 @@ import { Calendar, Clock, TrendingUp, Plus, Settings, LogOut, Users, DollarSign,
 import { NewAppointmentModal } from "@/components/custom/new-appointment-modal"
 import { SettingsModal } from "@/components/custom/settings-modal"
 import { WhatsAppTemplatesModal } from "@/components/custom/whatsapp-templates-modal"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser"
 import { useRouter } from "next/navigation"
 
 type Appointment = {
@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [showReportsMessage, setShowReportsMessage] = useState(false)
 
   const router = useRouter()
+  const supabase = getSupabaseBrowserClient()
 
   // Verificar autenticação e carregar dados do usuário
   useEffect(() => {
