@@ -12,6 +12,8 @@ interface NewAppointmentModalProps {
 
 export function NewAppointmentModal({ isOpen, onClose, onSuccess, barberId }: NewAppointmentModalProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({
     client_name: "",
     client_whatsapp: "",
@@ -23,6 +25,8 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess, barberId }: Ne
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
+    setSuccess(false)
 
     try {
       const response = await fetch('/api/appointments', {
@@ -40,7 +44,7 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess, barberId }: Ne
         throw new Error(data.error || 'Erro ao criar agendamento')
       }
 
-      alert('✅ Agendamento criado com sucesso!')
+      setSuccess(true)
       setFormData({
         client_name: "",
         client_whatsapp: "",
@@ -48,11 +52,15 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess, barberId }: Ne
         date: "",
         time: ""
       })
-      onSuccess()
-      onClose()
+      
+      setTimeout(() => {
+        onSuccess()
+        onClose()
+        setSuccess(false)
+      }, 1500)
     } catch (error: any) {
       console.error('Erro:', error)
-      alert(`❌ ${error.message}`)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -72,6 +80,18 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess, barberId }: Ne
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {success && (
+          <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+            ✅ Agendamento criado com sucesso!
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            ❌ {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

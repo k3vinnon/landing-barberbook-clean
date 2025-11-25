@@ -60,14 +60,18 @@ Quer remarcar? É só me chamar! 📲`
 
 export function WhatsAppTemplatesModal({ isOpen, onClose }: WhatsAppTemplatesModalProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [copyError, setCopyError] = useState<string>("")
 
   const copyToClipboard = async (text: string, index: number) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopiedIndex(index)
+      setCopyError("")
       setTimeout(() => setCopiedIndex(null), 2000)
     } catch (error) {
-      alert('Erro ao copiar. Tente novamente.')
+      console.error('Erro ao copiar:', error)
+      setCopyError('Erro ao copiar. Tente novamente.')
+      setTimeout(() => setCopyError(""), 3000)
     }
   }
 
@@ -85,6 +89,12 @@ export function WhatsAppTemplatesModal({ isOpen, onClose }: WhatsAppTemplatesMod
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {copyError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            {copyError}
+          </div>
+        )}
 
         <div className="space-y-4">
           {TEMPLATES.map((template, index) => (

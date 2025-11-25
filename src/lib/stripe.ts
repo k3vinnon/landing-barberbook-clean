@@ -1,28 +1,41 @@
-import { loadStripe } from '@stripe/stripe-js'
-import Stripe from 'stripe'
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 
-// Cliente Stripe para frontend (lazy loading)
-export const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-)
-
-// Cliente Stripe para backend (server-side) com lazy loading
-let stripeInstance: Stripe | null = null
+let stripePromise: Promise<Stripe | null>;
 
 export const getStripe = () => {
-  if (!stripeInstance) {
-    const secretKey = process.env.STRIPE_SECRET_KEY
-    
-    if (!secretKey) {
-      throw new Error('STRIPE_SECRET_KEY não está configurada')
-    }
-    
-    stripeInstance = new Stripe(secretKey, {
-      apiVersion: '2024-11-20.acacia',
-    })
+  if (!stripePromise) {
+    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
   }
-  
-  return stripeInstance
-}
+  return stripePromise;
+};
 
-export default getStripe
+export const createCheckoutSession = async (
+  planType: "trial" | "paid",
+  email: string,
+  name: string
+) => {
+  try {
+    const response = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        planType,
+        email,
+        name,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erro ao criar sessão de checkout");
+    }
+
+    return data;
+  } catch (error: any) {
+    console.error("Erro ao criar checkout:", error);
+    throw error;
+  }
+};

@@ -102,12 +102,8 @@ export function CheckoutModal({ isOpen, onClose, planType }: CheckoutModalProps)
 
       console.log('✅ Sucesso! Conta criada.')
 
-      // Se for trial, mostrar credenciais e redirecionar para dashboard
+      // Se for trial, redirecionar para dashboard (backend já redirecionou)
       if (planType === "trial") {
-        // Mostrar modal de sucesso com credenciais
-        alert(`✅ Conta criada com sucesso!\n\n📧 Email: ${data.credentials.email}\n🔑 Senha: ${data.credentials.password}\n\n⚠️ Guarde essas credenciais! Você será redirecionado para o dashboard.`)
-        
-        // Redirecionar para dashboard
         router.push('/dashboard')
         return
       }

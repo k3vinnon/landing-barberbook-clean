@@ -1,107 +1,114 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getStripe } from '@/lib/stripe'
-import { supabase } from '@/lib/supabase'
-import Stripe from 'stripe'
+export const runtime = 'nodejs';
+
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-11-20.acacia",
+});
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: NextRequest) {
-  const body = await req.text()
-  const signature = req.headers.get('stripe-signature')!
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
 
-  // Inicializar Stripe apenas quando necessário
-  const stripe = getStripe()
+  if (!signature) {
+    return NextResponse.json(
+      { error: "Assinatura ausente" },
+      { status: 400 }
+    );
+  }
 
-  let event: Stripe.Event
+  let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
-    )
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    );
+  } catch (err: any) {
+    console.error("Erro na verificação do webhook:", err.message);
+    return NextResponse.json(
+      { error: `Webhook Error: ${err.message}` },
+      { status: 400 }
+    );
   }
 
   // Processar eventos do Stripe
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
-      const userId = session.metadata?.userId
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        // Salvar assinatura no Supabase
+        const { error } = await supabase.from("subscriptions").insert({
+          customer_email: session.customer_email,
+          customer_name: session.metadata?.customerName,
+          stripe_customer_id: session.customer,
+          stripe_subscription_id: session.subscription,
+          plan_type: session.metadata?.planType,
+          status: "active",
+          created_at: new Date().toISOString(),
+        });
 
-      if (userId) {
+        if (error) {
+          console.error("Erro ao salvar assinatura:", error);
+        }
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        
         // Atualizar status da assinatura
-        await supabase
-          .from('users')
+        const { error } = await supabase
+          .from("subscriptions")
           .update({
-            subscription_status: 'active',
-            stripe_customer_id: session.customer as string,
+            status: subscription.status,
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', userId)
+          .eq("stripe_subscription_id", subscription.id);
 
-        // Registrar pagamento
-        await supabase.from('payments').insert({
-          user_id: userId,
-          stripe_payment_id: session.payment_intent as string,
-          amount: session.amount_total || 0,
-          status: 'succeeded',
-        })
+        if (error) {
+          console.error("Erro ao atualizar assinatura:", error);
+        }
+        break;
       }
-      break
-    }
 
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription
-      const customerId = subscription.customer as string
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        
+        // Marcar assinatura como cancelada
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({
+            status: "canceled",
+            canceled_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", subscription.id);
 
-      // Desativar conta
-      await supabase
-        .from('users')
-        .update({ subscription_status: 'canceled' })
-        .eq('stripe_customer_id', customerId)
-      break
-    }
-
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice
-      const customerId = invoice.customer as string
-
-      // Marcar como pagamento atrasado
-      await supabase
-        .from('users')
-        .update({ subscription_status: 'past_due' })
-        .eq('stripe_customer_id', customerId)
-      break
-    }
-
-    case 'invoice.payment_succeeded': {
-      const invoice = event.data.object as Stripe.Invoice
-      const customerId = invoice.customer as string
-
-      // Reativar conta
-      await supabase
-        .from('users')
-        .update({ subscription_status: 'active' })
-        .eq('stripe_customer_id', customerId)
-
-      // Registrar pagamento
-      const { data: user } = await supabase
-        .from('users')
-        .select('id')
-        .eq('stripe_customer_id', customerId)
-        .single()
-
-      if (user) {
-        await supabase.from('payments').insert({
-          user_id: user.id,
-          stripe_payment_id: invoice.payment_intent as string,
-          amount: invoice.amount_paid,
-          status: 'succeeded',
-        })
+        if (error) {
+          console.error("Erro ao cancelar assinatura:", error);
+        }
+        break;
       }
-      break
+
+      default:
+        console.log(`Evento não tratado: ${event.type}`);
     }
+
+    return NextResponse.json({ received: true });
+  } catch (error: any) {
+    console.error("Erro ao processar webhook:", error);
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ received: true })
 }

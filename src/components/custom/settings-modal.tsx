@@ -21,6 +21,8 @@ const DAYS_MAP = {
 
 export function SettingsModal({ isOpen, onClose, barberId }: SettingsModalProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({
     working_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
     start_time: '09:00',
@@ -55,6 +57,8 @@ export function SettingsModal({ isOpen, onClose, barberId }: SettingsModalProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
+    setSuccess(false)
 
     try {
       const response = await fetch('/api/settings', {
@@ -72,11 +76,14 @@ export function SettingsModal({ isOpen, onClose, barberId }: SettingsModalProps)
         throw new Error(data.error || 'Erro ao salvar configurações')
       }
 
-      alert('✅ Configurações salvas com sucesso!')
-      onClose()
+      setSuccess(true)
+      setTimeout(() => {
+        onClose()
+        setSuccess(false)
+      }, 1500)
     } catch (error: any) {
       console.error('Erro:', error)
-      alert(`❌ ${error.message}`)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -105,6 +112,18 @@ export function SettingsModal({ isOpen, onClose, barberId }: SettingsModalProps)
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {success && (
+          <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+            ✅ Configurações salvas com sucesso!
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            ❌ {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

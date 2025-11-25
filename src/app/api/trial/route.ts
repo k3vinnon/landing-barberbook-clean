@@ -1,4 +1,7 @@
+export const runtime = 'nodejs';
+
 import { supabaseAdmin } from '@/lib/supabase'
+import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
@@ -76,16 +79,12 @@ export async function POST(request: Request) {
       ]
     })
     
-    return Response.json({
-      success: true,
-      credentials: {
-        email: email,
-        password: tempPassword,
-        username: userData.username,
-        dashboardUrl: '/dashboard',
-        publicUrl: `/${userData.username}`
-      }
-    })
+    // Redirecionar para página de sucesso com credenciais
+    const redirectUrl = new URL('/success', request.url)
+    redirectUrl.searchParams.set('email', email)
+    redirectUrl.searchParams.set('password', tempPassword)
+    
+    return NextResponse.redirect(redirectUrl, 303)
     
   } catch (error: any) {
     console.error('Erro:', error)

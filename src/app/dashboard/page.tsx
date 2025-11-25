@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showReportsMessage, setShowReportsMessage] = useState(false)
 
   const router = useRouter()
 
@@ -163,7 +164,7 @@ export default function DashboardPage() {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
     } catch (error) {
-      alert('Erro ao copiar link. Tente novamente.')
+      console.error('❌ Erro ao copiar link:', error)
     }
   }
 
@@ -175,6 +176,11 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('❌ Erro ao fazer logout:', error)
     }
+  }
+
+  const handleReportsClick = () => {
+    setShowReportsMessage(true)
+    setTimeout(() => setShowReportsMessage(false), 3000)
   }
 
   // Mostrar loading enquanto verifica autenticação
@@ -388,10 +394,15 @@ export default function DashboardPage() {
               <h3 className="font-bold mb-4">Ações Rápidas</h3>
               <div className="space-y-2">
                 <button 
-                  onClick={() => alert('Relatórios em breve!')}
-                  className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm text-left hover:bg-zinc-800 transition-colors"
+                  onClick={handleReportsClick}
+                  className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm text-left hover:bg-zinc-800 transition-colors relative"
                 >
                   📊 Ver Relatórios
+                  {showReportsMessage && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#FFD700]">
+                      Em breve!
+                    </span>
+                  )}
                 </button>
                 <button 
                   onClick={() => setShowSettings(true)}
