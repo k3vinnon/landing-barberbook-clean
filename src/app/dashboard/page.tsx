@@ -64,6 +64,10 @@ export default function DashboardPage() {
 
       console.log('✅ Usuário autenticado:', user.id)
 
+      // 🔍 DEBUG: Mostrar user.id ANTES da query
+      console.log('🔍 user.id:', user.id)
+      console.log('🔍 Tipo de user.id:', typeof user.id)
+
       // Buscar dados do usuário na tabela users
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -71,8 +75,14 @@ export default function DashboardPage() {
         .eq('auth_id', user.id)
         .single()
 
+      // 📊 DEBUG: Mostrar resultado da query
+      console.log('📊 userError:', userError)
+      console.log('📊 userData:', userData)
+
       if (userError || !userData) {
         console.error('❌ Erro ao buscar dados do usuário:', userError)
+        // ❌ DEBUG: Detalhes completos do erro
+        console.log('❌ DETALHES DO ERRO:', JSON.stringify(userError, null, 2))
         router.push('/login')
         return
       }
