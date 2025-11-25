@@ -67,7 +67,7 @@ export default function DashboardPage() {
       // Buscar dados do usuário na tabela users
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, username')
+        .select('id, name')
         .eq('auth_id', user.id)
         .single()
 
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
       console.log('✅ Dados do usuário carregados:', userData)
       setBarberId(userData.id)
-      setBarberUsername(userData.username || 'barbeiro')
+      setBarberUsername(userData.name || 'barbeiro')
       localStorage.setItem('barber_id', userData.id)
       
     } catch (error) {
