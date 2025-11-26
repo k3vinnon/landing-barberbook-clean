@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Criado com a Lasy",
-  description: "Projeto criado com Lasy AI",
+  title: "BarberBook Portugal - Sistema de Agendamento para Barbearias",
+  description: "Aumente agendamentos em 40% com sistema automático. €29/mês. Teste grátis 7 dias.",
+  keywords: "agendamento barbearia portugal, sistema barbearia, gestão barbearia",
 };
 
 export default function RootLayout({
@@ -27,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-PT">
       <head>
         <Script src="/lasy-bridge.js" strategy="beforeInteractive" />
       </head>
