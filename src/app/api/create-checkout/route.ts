@@ -9,40 +9,55 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: NextRequest) {
   try {
-    const { planType, email, name } = await req.json();
+    const body = await req.json();
+    console.log('📥 Recebido body:', body);
+    
+    const { plan, priceId } = body;
+    console.log('📊 Plan:', plan, 'PriceId:', priceId);
+
+    // Validação de parâmetros
+    if (!plan) {
+      console.error('❌ Parâmetro "plan" ausente');
+      return NextResponse.json(
+        { error: 'Parâmetro "plan" é obrigatório' },
+        { status: 400 }
+      );
+    }
 
     // Definir preços baseado no plano
     const prices = {
       trial: {
         amount: 0,
-        trialDays: 14,
-        description: "Teste Grátis por 14 dias - Depois R$79/mês",
+        trialDays: 7,
+        description: "Teste Grátis por 7 dias - Depois €29/mês",
       },
       paid: {
-        amount: 3900, // R$39,00 em centavos
-        trialDays: 0,
-        description: "R$39 hoje + 3 meses grátis (R$237 de valor)",
+        amount: 1400, // €14,00 em centavos
+        trialDays: 60, // 2 meses grátis
+        description: "€14 hoje + 2 meses grátis (€58 de valor)",
       },
     };
 
-    const selectedPrice = prices[planType as keyof typeof prices];
+    const selectedPrice = prices[plan as keyof typeof prices];
 
     if (!selectedPrice) {
+      console.error('❌ Plano inválido:', plan);
       return NextResponse.json(
-        { error: "Plano inválido" },
+        { error: "Plano inválido. Use 'trial' ou 'paid'" },
         { status: 400 }
       );
     }
+
+    console.log('✅ Preço selecionado:', selectedPrice);
 
     // Criar sessão de checkout do Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
-      customer_email: email,
       line_items: [
         {
           price_data: {
-            currency: "brl",
+            currency: "eur",
             product_data: {
               name: "BarberBook - Sistema de Agendamento",
               description: selectedPrice.description,
@@ -56,26 +71,29 @@ export async function POST(req: NextRequest) {
         },
       ],
       subscription_data: {
-        trial_period_days: selectedPrice.trialDays,
+        trial_period_days: selectedPrice.trialDays > 0 ? selectedPrice.trialDays : undefined,
         metadata: {
-          planType,
-          customerName: name,
+          planType: plan,
         },
       },
       success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL}/?canceled=true`,
       metadata: {
-        planType,
-        customerEmail: email,
-        customerName: name,
+        planType: plan,
       },
     });
 
+    console.log('✅ Sessão criada:', session.id);
+
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error: any) {
-    console.error("Erro ao criar checkout:", error);
+    console.error("❌ ERRO COMPLETO:", error);
+    console.error("Stack:", error.stack);
     return NextResponse.json(
-      { error: error.message || "Erro ao processar pagamento" },
+      { 
+        error: error.message || "Erro ao processar pagamento",
+        stack: error.stack 
+      },
       { status: 500 }
     );
   }
