@@ -10,8 +10,11 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [isPaid, setIsPaid] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   const sessionId = searchParams.get('session_id');
   const emailParam = searchParams.get('email');
@@ -36,6 +39,19 @@ function SuccessContent() {
               email: data.email,
               password: data.password
             });
+
+            // Enviar email de boas-vindas
+            await fetch('/api/send-welcome-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: data.email,
+                password: data.password,
+                isPaid: true
+              })
+            });
+
+            console.log('✅ Email de boas-vindas enviado!');
           } else {
             console.error('❌ Erro ao buscar sessão:', data.error);
           }
@@ -50,6 +66,19 @@ function SuccessContent() {
           email: emailParam,
           password: passwordParam
         });
+
+        // Enviar email de boas-vindas
+        await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailParam,
+            password: passwordParam,
+            isPaid: false
+          })
+        });
+
+        console.log('✅ Email de boas-vindas enviado!');
       }
       
       setLoading(false);
@@ -58,13 +87,59 @@ function SuccessContent() {
     loadData();
   }, [sessionId, emailParam, passwordParam]);
 
-  const handleGoToLogin = () => {
-    router.push('/login');
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(credentials.email);
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } catch (error) {
+      console.error('Erro ao copiar email:', error);
+    }
   };
 
-  const handleCopyCredentials = () => {
-    const credentials = `Email: ${credentials.email}\nSenha: ${credentials.password}`;
-    navigator.clipboard.writeText(credentials);
+  const copyPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(credentials.password);
+      setCopiedPassword(true);
+      setTimeout(() => setCopiedPassword(false), 2000);
+    } catch (error) {
+      console.error('Erro ao copiar senha:', error);
+    }
+  };
+
+  const handleAccessDashboard = async () => {
+    setLoginLoading(true);
+    
+    try {
+      console.log('🔐 Fazendo login automático...');
+      
+      // Fazer login com Supabase
+      const { getSupabaseBrowserClient } = await import('@/lib/supabase-browser');
+      const supabase = getSupabaseBrowserClient();
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password
+      });
+      
+      if (error) {
+        console.error('❌ Erro no login automático:', error);
+        // Se falhar, redireciona para login manual
+        router.push('/login');
+        return;
+      }
+      
+      console.log('✅ Login automático bem-sucedido!');
+      
+      // Redirecionar para dashboard
+      router.push('/dashboard');
+      
+    } catch (error) {
+      console.error('❌ Erro:', error);
+      router.push('/login');
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   if (loading) {
@@ -131,6 +206,22 @@ function SuccessContent() {
                 <div className="rounded-lg bg-zinc-800 p-3 font-mono text-[#FFD700] break-all">
                   {credentials.email || 'Não disponível'}
                 </div>
+                <button
+                  onClick={copyEmail}
+                  className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 p-2 text-sm text-zinc-300 transition-colors"
+                >
+                  {copiedEmail ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-green-500">✓ Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      📋 Copiar Email
+                    </>
+                  )}
+                </button>
               </div>
 
               <div>
@@ -138,16 +229,24 @@ function SuccessContent() {
                 <div className="rounded-lg bg-zinc-800 p-3 font-mono text-[#FFD700]">
                   {credentials.password || 'Não disponível'}
                 </div>
+                <button
+                  onClick={copyPassword}
+                  className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 p-2 text-sm text-zinc-300 transition-colors"
+                >
+                  {copiedPassword ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-green-500">✓ Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      📋 Copiar Senha
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={handleCopyCredentials}
-              className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 p-3 text-sm text-zinc-300 transition-colors"
-            >
-              <Copy className="h-4 w-4" />
-              Copiar Credenciais
-            </button>
 
             <p className="mt-4 text-center text-xs text-zinc-500">
               💡 Recomendamos alterar sua senha após o primeiro login
@@ -157,11 +256,21 @@ function SuccessContent() {
           {/* CTA Button */}
           <div className="space-y-4">
             <button
-              onClick={handleGoToLogin}
-              className="group w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] px-8 py-4 text-lg font-bold text-black transition-all hover:scale-105 hover:shadow-2xl hover:shadow-[#FFD700]/50"
+              onClick={handleAccessDashboard}
+              disabled={loginLoading}
+              className="group w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] px-8 py-4 text-lg font-bold text-black transition-all hover:scale-105 hover:shadow-2xl hover:shadow-[#FFD700]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              Ir para Login
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              {loginLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  Acessar Dashboard Agora
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
             </button>
           </div>
 
