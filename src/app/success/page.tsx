@@ -3,24 +3,80 @@
 export const dynamic = 'force-dynamic';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense } from 'react';
-import { Calendar, Check, ArrowRight, Copy } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import { Calendar, Check, ArrowRight, Copy, Loader2 } from 'lucide-react';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const email = searchParams.get('email') || '';
-  const password = searchParams.get('password') || '';
+  const [loading, setLoading] = useState(true);
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [isPaid, setIsPaid] = useState(false);
+
+  const sessionId = searchParams.get('session_id');
+  const emailParam = searchParams.get('email');
+  const passwordParam = searchParams.get('password');
+
+  useEffect(() => {
+    async function loadData() {
+      // Se veio do Stripe (tem session_id)
+      if (sessionId) {
+        try {
+          console.log('🔍 Buscando sessão do Stripe:', sessionId);
+          
+          // Buscar dados da sessão do Stripe
+          const response = await fetch(`/api/get-session?session_id=${sessionId}`);
+          const data = await response.json();
+          
+          console.log('📊 Dados recebidos:', data);
+          
+          if (data.success) {
+            setIsPaid(true);
+            setCredentials({
+              email: data.email,
+              password: data.password
+            });
+          } else {
+            console.error('❌ Erro ao buscar sessão:', data.error);
+          }
+        } catch (error) {
+          console.error('❌ Erro ao buscar session:', error);
+        }
+      } 
+      // Se veio do teste grátis (tem email/password)
+      else if (emailParam && passwordParam) {
+        setIsPaid(false);
+        setCredentials({
+          email: emailParam,
+          password: passwordParam
+        });
+      }
+      
+      setLoading(false);
+    }
+    
+    loadData();
+  }, [sessionId, emailParam, passwordParam]);
 
   const handleGoToLogin = () => {
     router.push('/login');
   };
 
   const handleCopyCredentials = () => {
-    const credentials = `Email: ${email}\nSenha: ${password}`;
+    const credentials = `Email: ${credentials.email}\nSenha: ${credentials.password}`;
     navigator.clipboard.writeText(credentials);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-[#FFD700] mx-auto mb-4" />
+          <p className="text-xl text-zinc-400">Processando seu pagamento...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white flex items-center justify-center p-4">
@@ -42,13 +98,15 @@ function SuccessContent() {
             </div>
           </div>
 
-          {/* Title */}
+          {/* Title - Diferente para pagos vs teste grátis */}
           <h1 className="mb-4 text-center text-4xl font-bold">
-            Conta Criada com Sucesso! 🎉
+            {isPaid ? 'Pagamento Confirmado! 🎉' : 'Conta Criada com Sucesso! 🎉'}
           </h1>
 
           <p className="mb-8 text-center text-xl text-zinc-400">
-            Seu teste grátis de 7 dias está ativo!
+            {isPaid 
+              ? 'Bem-vindo ao BarberBook Premium!' 
+              : 'Seu teste grátis de 7 dias está ativo!'}
           </p>
 
           {/* Warning Box */}
@@ -71,14 +129,14 @@ function SuccessContent() {
               <div>
                 <label className="mb-1 block text-sm text-zinc-500">Email de Acesso:</label>
                 <div className="rounded-lg bg-zinc-800 p-3 font-mono text-[#FFD700] break-all">
-                  {email || 'Não disponível'}
+                  {credentials.email || 'Não disponível'}
                 </div>
               </div>
 
               <div>
                 <label className="mb-1 block text-sm text-zinc-500">Senha Temporária:</label>
                 <div className="rounded-lg bg-zinc-800 p-3 font-mono text-[#FFD700]">
-                  {password || 'Não disponível'}
+                  {credentials.password || 'Não disponível'}
                 </div>
               </div>
             </div>
@@ -129,6 +187,15 @@ function SuccessContent() {
               </li>
             </ul>
           </div>
+
+          {/* Badge para clientes pagos */}
+          {isPaid && (
+            <div className="mt-6 rounded-xl border-2 border-[#FFD700] bg-gradient-to-r from-[#FFD700]/10 to-[#FFA500]/10 p-4">
+              <p className="text-center text-sm font-bold text-[#FFD700]">
+                ✨ Você é um membro PREMIUM do BarberBook!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -142,7 +209,11 @@ function SuccessContent() {
 
 export default function SuccessPage() {
   return (
-    <Suspense fallback={<div>Carregando...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-[#FFD700]" />
+      </div>
+    }>
       <SuccessContent />
     </Suspense>
   );
