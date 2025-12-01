@@ -127,12 +127,12 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
         .from('appointments')
         .insert({
           barber_id: barber.id,
-          service_id: selectedService.id,
+          service: selectedService.name, // ← Nome do serviço (text)
           client_name: clientData.name,
-          client_phone: clientData.phone,
+          client_whatsapp: clientData.phone, // ← client_whatsapp!
           client_email: clientData.email || null,
-          appointment_date: selectedDate,
-          appointment_time: selectedTime,
+          date: selectedDate, // ← date (não appointment_date)
+          time: selectedTime, // ← time (não appointment_time)
           status: 'pending'
         })
         .select()
