@@ -19,27 +19,45 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   }, []);
 
   const loadBarberData = async () => {
-    const slug = params.slug;
-    
-    // Buscar barbeiro
-    const { data: userData } = await supabase
+    // Buscar TODOS os usuários primeiro
+    const { data: allUsers, error: usersError } = await supabase
       .from('users')
-      .select('id, name, email')
-      .ilike('name', `%${slug.replace(/-/g, ' ')}%`)
-      .single();
-    
-    if (userData) {
-      setBarber(userData);
-      
-      // Buscar serviços
-      const { data: servicesData } = await supabase
-        .from('services')
-        .select('*')
-        .eq('user_id', userData.id)
-        .eq('active', true);
-      
-      setServices(servicesData || []);
+      .select('id, name, email');
+
+    console.log('👥 Todos os usuários:', allUsers);
+
+    if (!allUsers || allUsers.length === 0) {
+      console.error('❌ Nenhum usuário encontrado!');
+      return;
     }
+
+    // Buscar localmente pelo slug
+    const searchTerms = params.slug.toLowerCase().split('-');
+    console.log('🔍 Termos de busca:', searchTerms);
+
+    const foundBarber = allUsers.find(u => {
+      const userName = u.name.toLowerCase();
+      return searchTerms.every(term => userName.includes(term));
+    });
+
+    console.log('✅ Barbeiro encontrado:', foundBarber);
+
+    if (!foundBarber) {
+      console.error('❌ Barbeiro não encontrado com slug:', params.slug);
+      return;
+    }
+
+    setBarber(foundBarber);
+
+    // Agora buscar serviços
+    const { data: servicesData } = await supabase
+      .from('services')
+      .select('*')
+      .eq('user_id', foundBarber.id)
+      .eq('active', true);
+
+    console.log('✅ Serviços:', servicesData);
+    setServices(servicesData || []);
   };
 
   return (
