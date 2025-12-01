@@ -65,20 +65,51 @@ export default function DashboardPage() {
 
       console.log('✅ Usuário autenticado:', user.id)
 
-      // 🔍 DEBUG: Mostrar user.id ANTES da query
-      console.log('🔍 user.id:', user.id)
-      console.log('🔍 Tipo de user.id:', typeof user.id)
+      // 🔍 DEBUG: Mostrar USER COMPLETO
+      console.log('👤 USER COMPLETO:', JSON.stringify(user, null, 2))
+      console.log('🔍 user.id:', user?.id)
+      console.log('🔍 Tipo:', typeof user?.id)
 
       // Buscar dados do usuário na tabela users
+      console.log('═══════════════════════════════════');
+      console.log('🔍 ANTES DA QUERY:');
+      console.log('   - auth_id que será buscado:', user.id);
+      console.log('   - Tipo do auth_id:', typeof user.id);
+      console.log('═══════════════════════════════════');
+      
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id, name')
         .eq('auth_id', user.id)
         .single()
+      
+      console.log('═══════════════════════════════════');
+      console.log('🔍 DEPOIS DA QUERY:');
+      console.log('   - userData:', userData);
+      console.log('   - userError:', userError);
+      console.log('═══════════════════════════════════');
 
       // 📊 DEBUG: Mostrar resultado da query
-      console.log('📊 userError:', userError)
-      console.log('📊 userData:', userData)
+      console.log('📊 QUERY EXECUTADA:')
+      console.log('   - auth_id procurado:', user?.id)
+      console.log('   - userError:', JSON.stringify(userError, null, 2))
+      console.log('   - userData:', JSON.stringify(userData, null, 2))
+
+      // 📋 DEBUG: Fazer query SEM .single() para ver TODOS os registros
+      const { data: allUsers } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', user?.id)
+
+      console.log('📋 TODOS os usuários com este auth_id:', allUsers)
+
+      // 📊 DEBUG: Query alternativa SEM filtro para ver se a tabela tem dados
+      const { data: sampleUsers } = await supabase
+        .from('users')
+        .select('id, email, auth_id')
+        .limit(5)
+
+      console.log('📊 AMOSTRA da tabela users (5 primeiros):', sampleUsers)
 
       if (userError || !userData) {
         console.error('❌ Erro ao buscar dados do usuário:', userError)

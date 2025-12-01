@@ -61,7 +61,16 @@ export async function GET(request: Request) {
     console.log('✅ Usuário criado no Auth:', authData.user.id);
     
     // 4. CRIAR registro na tabela users
-    console.log('📊 Criando registro na tabela users...');
+    console.log('📊 Tentando criar registro na tabela users...');
+    console.log('📊 Dados para inserir:', {
+      auth_id: authData.user.id,
+      email: email,
+      name: session.customer_details?.name || 'Cliente',
+      whatsapp: session.customer_details?.phone || '',
+      plan: 'premium',
+      stripe_customer_id: session.customer,
+      stripe_session_id: sessionId
+    });
     
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -77,8 +86,15 @@ export async function GET(request: Request) {
       .select()
       .single();
     
+    console.log('📊 RESULTADO do INSERT:');
+    console.log('   userData:', userData);
+    console.log('   userError:', JSON.stringify(userError, null, 2));
+    
     if (userError) {
-      console.error('❌ Erro ao criar registro na tabela users:', userError);
+      console.error('❌❌❌ ERRO CRÍTICO ao criar na tabela users:', userError);
+      console.error('❌ Código:', userError.code);
+      console.error('❌ Mensagem:', userError.message);
+      console.error('❌ Details:', userError.details);
       // Continuar mesmo com erro (usuário Auth já foi criado)
     } else {
       console.log('✅ Registro criado na tabela users:', userData.id);
