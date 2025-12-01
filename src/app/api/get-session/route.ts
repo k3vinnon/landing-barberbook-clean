@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
@@ -7,81 +8,107 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-11-20.acacia',
 });
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // Usar SERVICE_ROLE para criar usuários!
+);
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get('session_id');
 
-  console.log('📥 API get-session chamada com sessionId:', sessionId);
-
   if (!sessionId) {
-    console.error('❌ Session ID não fornecido');
     return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
   }
 
   try {
-    console.log('🔍 Buscando sessão no Stripe...');
+    console.log('🔍 Buscando sessão do Stripe:', sessionId);
     
-    // Buscar sessão do Stripe
+    // 1. Buscar dados da sessão do Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
-    console.log('✅ Sessão encontrada:', {
-      id: session.id,
-      status: session.payment_status,
-      email: session.customer_email || session.customer_details?.email
-    });
-    
-    // Extrair email do cliente
     const email = session.customer_email || session.customer_details?.email;
     
     if (!email) {
-      console.error('❌ Email não encontrado na sessão');
-      return NextResponse.json({ 
-        error: 'Email não encontrado na sessão',
-        success: false 
-      }, { status: 400 });
+      throw new Error('Email não encontrado na sessão do Stripe');
     }
     
-    // Gerar senha aleatória
-    const password = generateRandomPassword();
+    console.log('📧 Email do cliente:', email);
     
-    console.log('🔐 Credenciais geradas:', { email, password: '***' });
+    // 2. Gerar senha aleatória
+    const password = generateSecurePassword();
+    console.log('🔑 Senha gerada');
     
-    // TODO: Criar usuário no Supabase com esses dados
-    // Exemplo:
-    // const { data, error } = await supabase.auth.admin.createUser({
-    //   email: email,
-    //   password: password,
-    //   email_confirm: true
-    // });
+    // 3. CRIAR usuário no Supabase Auth
+    console.log('👤 Criando usuário no Supabase Auth...');
     
-    console.log('✅ Retornando credenciais para o cliente');
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true, // Confirmar email automaticamente!
+      user_metadata: {
+        plan: session.metadata?.plan || 'paid',
+        stripe_session_id: sessionId,
+        stripe_customer_id: session.customer
+      }
+    });
+    
+    if (authError) {
+      console.error('❌ Erro ao criar usuário no Auth:', authError);
+      throw authError;
+    }
+    
+    console.log('✅ Usuário criado no Auth:', authData.user.id);
+    
+    // 4. CRIAR registro na tabela users
+    console.log('📊 Criando registro na tabela users...');
+    
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        auth_id: authData.user.id,
+        email: email,
+        name: session.customer_details?.name || 'Cliente',
+        whatsapp: session.customer_details?.phone || '',
+        plan: 'premium', // Cliente pagou!
+        stripe_customer_id: session.customer,
+        stripe_session_id: sessionId
+      })
+      .select()
+      .single();
+    
+    if (userError) {
+      console.error('❌ Erro ao criar registro na tabela users:', userError);
+      // Continuar mesmo com erro (usuário Auth já foi criado)
+    } else {
+      console.log('✅ Registro criado na tabela users:', userData.id);
+    }
+    
+    console.log('🎉 Conta criada com sucesso!');
     
     return NextResponse.json({
       success: true,
       email: email,
       password: password,
-      paid: session.payment_status === 'paid',
-      sessionId: session.id
+      paid: true,
+      userId: authData.user.id
     });
     
   } catch (error: any) {
-    console.error('❌ Erro ao buscar sessão do Stripe:', error);
+    console.error('❌ Erro ao processar sessão:', error);
     
     return NextResponse.json({ 
       error: error.message,
-      success: false
+      success: false 
     }, { status: 500 });
   }
 }
 
-function generateRandomPassword(): string {
-  // Gerar senha aleatória segura de 12 caracteres
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+function generateSecurePassword() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
   let password = '';
-  
   for (let i = 0; i < 12; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
   return password;
 }
