@@ -33,11 +33,35 @@ function getDay(dateStr: string) {
   return date.getDate();
 }
 
+// Funções helper para horários
+function getAvailableTimeSlots() {
+  const slots = [];
+  const startHour = 9; // 09:00
+  const endHour = 19; // 19:00
+  
+  for (let hour = startHour; hour < endHour; hour++) {
+    slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    slots.push(`${hour.toString().padStart(2, '0')}:30`);
+  }
+  
+  return slots;
+}
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('pt-PT', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  });
+}
+
 export default function BookingPage({ params }: { params: { slug: string } }) {
   const [barber, setBarber] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [step, setStep] = useState(1);
   
   useEffect(() => {
@@ -101,6 +125,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
           <p className="text-zinc-400">
             {step === 1 && 'Escolha um serviço para continuar'}
             {step === 2 && 'Escolha a data do agendamento'}
+            {step === 3 && 'Escolha o horário disponível'}
           </p>
         </div>
 
@@ -170,6 +195,41 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
             
             <button 
               onClick={() => setStep(1)}
+              className="text-zinc-400 hover:text-white"
+            >
+              ← Voltar
+            </button>
+          </div>
+        )}
+
+        {/* ETAPA 3 - Escolher Horário */}
+        {step === 3 && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Escolha o Horário</h2>
+              <p className="text-zinc-400">
+                {selectedService?.name} • {formatDate(selectedDate)}
+              </p>
+            </div>
+            
+            {/* Grid de Horários */}
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+              {getAvailableTimeSlots().map((time) => (
+                <button
+                  key={time}
+                  onClick={() => {
+                    setSelectedTime(time);
+                    setStep(4); // Próxima etapa
+                  }}
+                  className="p-4 rounded-lg border-2 border-zinc-800 hover:border-[#FFD700] transition-all text-center"
+                >
+                  <div className="font-bold">{time}</div>
+                </button>
+              ))}
+            </div>
+            
+            <button 
+              onClick={() => setStep(2)}
               className="text-zinc-400 hover:text-white"
             >
               ← Voltar
