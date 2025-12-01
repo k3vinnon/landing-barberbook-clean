@@ -155,6 +155,8 @@ export default function ServicesPage() {
         if (error) throw error
       }
 
+      // Força re-render da lista
+      setServices([])
       await loadServices(barberId)
       closeModal()
     } catch (error) {
@@ -273,7 +275,7 @@ export default function ServicesPage() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
                   <div className="text-2xl font-bold text-[#FFD700]">
-                    R$ {service.price.toFixed(2)}
+                    € {service.price.toFixed(2)}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -330,7 +332,7 @@ export default function ServicesPage() {
 
               {/* Preço */}
               <div>
-                <label className="block text-sm font-medium mb-2">Preço (R$)</label>
+                <label className="block text-sm font-medium mb-2">Preço (€)</label>
                 <input
                   type="number"
                   step="0.01"
