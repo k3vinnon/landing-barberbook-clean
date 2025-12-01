@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Calendar } from 'lucide-react';
+import { Calendar, Check } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,6 +63,13 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [step, setStep] = useState(1);
+  const [clientData, setClientData] = useState({
+    name: '',
+    phone: '',
+    email: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
   
   useEffect(() => {
     loadBarberData();
@@ -110,6 +117,89 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
     setServices(servicesData || []);
   };
 
+  const handleConfirmBooking = async () => {
+    setSubmitting(true);
+    
+    try {
+      console.log('📝 Criando agendamento...');
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert({
+          barber_id: barber.id,
+          service_id: selectedService.id,
+          client_name: clientData.name,
+          client_phone: clientData.phone,
+          client_email: clientData.email || null,
+          appointment_date: selectedDate,
+          appointment_time: selectedTime,
+          status: 'pending'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Erro:', error);
+        alert('Erro ao criar agendamento. Tente novamente!');
+        return;
+      }
+      
+      console.log('✅ Agendamento criado:', data);
+      
+      // Mostrar confirmação
+      setBookingConfirmed(true);
+      
+    } catch (error) {
+      console.error('❌ Erro:', error);
+      alert('Erro ao criar agendamento!');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Se agendamento confirmado, mostrar tela de sucesso
+  if (bookingConfirmed) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white p-6 flex items-center justify-center">
+        <div className="max-w-2xl mx-auto">
+          <div className="space-y-6 text-center">
+            <div className="flex justify-center">
+              <div className="h-20 w-20 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="h-10 w-10 text-white" />
+              </div>
+            </div>
+            
+            <h2 className="text-3xl font-bold">Agendamento Confirmado! 🎉</h2>
+            
+            <p className="text-zinc-400">
+              Seu horário foi reservado com sucesso!<br/>
+              Em breve você receberá uma confirmação no WhatsApp.
+            </p>
+            
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-left">
+              <h3 className="font-bold mb-3">Detalhes do Agendamento:</h3>
+              <div className="space-y-2 text-sm">
+                <p>✂️ <strong>{selectedService?.name}</strong></p>
+                <p>📅 {formatDate(selectedDate)}</p>
+                <p>🕐 {selectedTime}</p>
+                <p>💶 €{selectedService?.price}</p>
+                <p>👤 {clientData.name}</p>
+                <p>📱 {clientData.phone}</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black px-8 py-3 rounded-lg font-bold hover:scale-105 transition-all"
+            >
+              Fazer Novo Agendamento
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white p-6">
       <div className="max-w-4xl mx-auto">
@@ -126,6 +216,7 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
             {step === 1 && 'Escolha um serviço para continuar'}
             {step === 2 && 'Escolha a data do agendamento'}
             {step === 3 && 'Escolha o horário disponível'}
+            {step === 4 && 'Confirme seus dados'}
           </p>
         </div>
 
@@ -234,6 +325,101 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
             >
               ← Voltar
             </button>
+          </div>
+        )}
+
+        {/* ETAPA 4 - Dados do Cliente e Confirmação */}
+        {step === 4 && (
+          <div className="space-y-6">
+            
+            {/* Resumo do Agendamento */}
+            <div className="bg-zinc-900 border-2 border-[#FFD700] rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-4 text-center">Confirme seu Agendamento</h2>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Serviço:</span>
+                  <span className="font-bold">{selectedService?.icon} {selectedService?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Data:</span>
+                  <span className="font-bold">{formatDate(selectedDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Horário:</span>
+                  <span className="font-bold">{selectedTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Duração:</span>
+                  <span className="font-bold">{selectedService?.duration} minutos</span>
+                </div>
+                <div className="flex justify-between border-t border-zinc-800 pt-3 mt-3">
+                  <span className="text-zinc-400">Valor:</span>
+                  <span className="font-bold text-[#FFD700] text-xl">€{selectedService?.price}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulário de Dados */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="font-bold mb-4">Seus Dados</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Nome Completo *</label>
+                  <input
+                    type="text"
+                    value={clientData.name}
+                    onChange={(e) => setClientData({...clientData, name: e.target.value})}
+                    placeholder="Seu nome"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white focus:border-[#FFD700] focus:outline-none"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">WhatsApp *</label>
+                  <input
+                    type="tel"
+                    value={clientData.phone}
+                    onChange={(e) => setClientData({...clientData, phone: e.target.value})}
+                    placeholder="(11) 99999-9999"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white focus:border-[#FFD700] focus:outline-none"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Email (opcional)</label>
+                  <input
+                    type="email"
+                    value={clientData.email}
+                    onChange={(e) => setClientData({...clientData, email: e.target.value})}
+                    placeholder="seu@email.com"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white focus:border-[#FFD700] focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep(3)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg font-bold transition-all"
+              >
+                ← Voltar
+              </button>
+              
+              <button
+                onClick={handleConfirmBooking}
+                disabled={!clientData.name || !clientData.phone || submitting}
+                className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black py-3 rounded-lg font-bold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Confirmando...' : 'Confirmar Agendamento'}
+              </button>
+            </div>
+
           </div>
         )}
 
