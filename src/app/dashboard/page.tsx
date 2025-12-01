@@ -201,7 +201,15 @@ export default function DashboardPage() {
 
   const copyLink = async () => {
     try {
-      const link = `${window.location.origin}/${barberUsername}`
+      // Criar slug do nome do usuário
+      const userSlug = barberUsername
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9]+/g, '-') // Substitui espaços por -
+        .replace(/^-+|-+$/g, ''); // Remove - do início/fim
+      
+      const link = `${window.location.origin}/agendar/${userSlug}`
       await navigator.clipboard.writeText(link)
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
@@ -306,7 +314,7 @@ export default function DashboardPage() {
                 <DollarSign className="h-6 w-6 text-[#FFD700]" />
               </div>
             </div>
-            <p className="text-3xl font-bold mb-1">R$ {stats.revenue}</p>
+            <p className="text-3xl font-bold mb-1">€ {stats.revenue}</p>
             <p className="text-sm text-zinc-400">Faturamento Semanal</p>
           </div>
         </div>
@@ -391,7 +399,12 @@ export default function DashboardPage() {
               <h3 className="font-bold mb-4">Meu Link de Agendamento</h3>
               <div className="rounded-lg bg-black p-4 mb-4">
                 <p className="text-sm text-[#FFD700] break-all">
-                  barberbook.club/{barberUsername}
+                  barberbook.club/agendar/{barberUsername
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '')}
                 </p>
               </div>
               <button 
