@@ -131,8 +131,16 @@ function SuccessContent() {
       
       console.log('✅ Login automático bem-sucedido!');
       
-      // Redirecionar para dashboard
-      router.push('/dashboard');
+      // VERIFICAR SE CLIENTE PAGOU ANTES DE REDIRECIONAR
+      if (isPaid) {
+        // Cliente pagou → mostrar upsell!
+        console.log('💰 Cliente pagou → redirecionando para upsell');
+        router.push('/upsell-ia');
+      } else {
+        // Teste grátis → ir direto para dashboard
+        console.log('🆓 Teste grátis → redirecionando para dashboard');
+        router.push('/dashboard');
+      }
       
     } catch (error) {
       console.error('❌ Erro:', error);
