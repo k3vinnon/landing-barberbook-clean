@@ -125,15 +125,15 @@ export default function AppointmentsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Meus Agendamentos</h1>
-        <p className="text-zinc-400">Gerencie seus horários e clientes</p>
+        <h1 className="text-3xl font-bold mb-2 text-white">Meus Agendamentos</h1>
+        <p className="text-zinc-300">Gerencie seus horários e clientes</p>
       </div>
       
       {/* Agendamentos de Hoje */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="h-6 w-6 text-[#FFD700]" />
-          <h2 className="text-xl font-bold">Hoje ({new Date().toLocaleDateString('pt-PT')})</h2>
+          <h2 className="text-xl font-bold text-white">Hoje ({new Date().toLocaleDateString('pt-PT')})</h2>
         </div>
         
         {getTodayAppointments().length === 0 ? (
@@ -149,7 +149,7 @@ export default function AppointmentsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Clock className="h-5 w-5 text-[#FFD700]" />
-                      <span className="font-bold text-lg">{apt.time}</span>
+                      <span className="font-bold text-lg text-white">{apt.time}</span>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
                         apt.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
                         apt.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
@@ -160,23 +160,23 @@ export default function AppointmentsPage() {
                       </span>
                     </div>
                     
-                    <div className="space-y-1 text-sm text-zinc-400">
+                    <div className="space-y-1 text-sm">
                       <p className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span className="font-medium text-white">{apt.client_name}</span>
+                        <User className="h-4 w-4 text-zinc-400" />
+                        <span className="font-medium text-zinc-200">{apt.client_name}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-4 w-4 text-zinc-400" />
                         <a 
                           href={`https://wa.me/${apt.client_whatsapp.replace(/\D/g, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-[#FFD700] transition-colors"
+                          className="text-zinc-300 hover:text-[#FFD700] transition-colors"
                         >
                           {apt.client_whatsapp}
                         </a>
                       </p>
-                      <p className="flex items-center gap-2">
+                      <p className="flex items-center gap-2 text-zinc-300">
                         <span>✂️</span>
                         <span>{apt.service}</span>
                       </p>
@@ -212,7 +212,7 @@ export default function AppointmentsPage() {
       <div>
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="h-6 w-6 text-[#FFD700]" />
-          <h2 className="text-xl font-bold">Próximos 7 Dias</h2>
+          <h2 className="text-xl font-bold text-white">Próximos 7 Dias</h2>
         </div>
         
         {getUpcomingAppointments().length === 0 ? (
@@ -228,8 +228,8 @@ export default function AppointmentsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Clock className="h-5 w-5 text-[#FFD700]" />
-                      <span className="font-bold text-lg">{apt.time}</span>
-                      <span className="text-sm text-zinc-400">• {formatDate(apt.date)}</span>
+                      <span className="font-bold text-lg text-white">{apt.time}</span>
+                      <span className="text-sm text-zinc-300">• {formatDate(apt.date)}</span>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
                         apt.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
                         apt.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
@@ -240,23 +240,23 @@ export default function AppointmentsPage() {
                       </span>
                     </div>
                     
-                    <div className="space-y-1 text-sm text-zinc-400">
+                    <div className="space-y-1 text-sm">
                       <p className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span className="font-medium text-white">{apt.client_name}</span>
+                        <User className="h-4 w-4 text-zinc-400" />
+                        <span className="font-medium text-zinc-200">{apt.client_name}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-4 w-4 text-zinc-400" />
                         <a 
                           href={`https://wa.me/${apt.client_whatsapp.replace(/\D/g, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-[#FFD700] transition-colors"
+                          className="text-zinc-300 hover:text-[#FFD700] transition-colors"
                         >
                           {apt.client_whatsapp}
                         </a>
                       </p>
-                      <p className="flex items-center gap-2">
+                      <p className="flex items-center gap-2 text-zinc-300">
                         <span>✂️</span>
                         <span>{apt.service}</span>
                       </p>
