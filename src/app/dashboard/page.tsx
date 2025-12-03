@@ -229,8 +229,7 @@ export default function DashboardPage() {
   }
 
   const handleReportsClick = () => {
-    setShowReportsMessage(true)
-    setTimeout(() => setShowReportsMessage(false), 3000)
+    router.push('/dashboard/reports')
   }
 
   // Mostrar loading enquanto verifica autenticação
@@ -450,14 +449,9 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <button 
                   onClick={handleReportsClick}
-                  className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm text-left hover:bg-zinc-800 transition-colors relative"
+                  className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm text-left hover:bg-zinc-800 transition-colors"
                 >
                   📊 Ver Relatórios
-                  {showReportsMessage && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#FFD700]">
-                      Em breve!
-                    </span>
-                  )}
                 </button>
                 <button 
                   onClick={() => setShowSettings(true)}
