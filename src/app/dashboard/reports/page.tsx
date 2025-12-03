@@ -16,6 +16,8 @@ export default function ReportsPage() {
     topServices: [],
     topClients: []
   });
+  const [appointments, setAppointments] = useState([]);
+  const [services, setServices] = useState([]);
 
   useEffect(() => {
     loadReports();
@@ -33,36 +35,39 @@ export default function ReportsPage() {
     if (!userData) return;
     
     // Buscar TODOS os agendamentos
-    const { data: appointments } = await supabase
+    const { data: appointmentsData } = await supabase
       .from('appointments')
       .select('*')
       .eq('barber_id', userData.id);
     
     // Buscar TODOS os serviços (para pegar preços)
-    const { data: services } = await supabase
+    const { data: servicesData } = await supabase
       .from('services')
       .select('*')
       .eq('user_id', userData.id);
+    
+    setAppointments(appointmentsData || []);
+    setServices(servicesData || []);
     
     // CALCULAR ESTATÍSTICAS
     const today = new Date().toISOString().split('T')[0];
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    const appointmentsToday = appointments?.filter(a => a.date === today).length || 0;
-    const appointmentsWeek = appointments?.filter(a => a.date >= weekAgo).length || 0;
-    const appointmentsMonth = appointments?.filter(a => a.date >= monthAgo).length || 0;
+    const appointmentsToday = appointmentsData?.filter(a => a.date === today).length || 0;
+    const appointmentsWeek = appointmentsData?.filter(a => a.date >= weekAgo).length || 0;
+    const appointmentsMonth = appointmentsData?.filter(a => a.date >= monthAgo).length || 0;
     
     // Taxa de comparecimento
-    const confirmed = appointments?.filter(a => a.status === 'confirmed').length || 0;
-    const total = appointments?.length || 1;
+    const confirmed = appointmentsData?.filter(a => a.status === 'confirmed').length || 0;
+    const total = appointmentsData?.length || 1;
     const attendanceRate = Math.round((confirmed / total) * 100);
     
     // Faturamento (soma de preços dos serviços agendados confirmados)
     let totalRevenue = 0;
-    appointments?.forEach(apt => {
+    appointmentsData?.forEach(apt => {
       if (apt.status === 'confirmed') {
-        const service = services?.find(s => s.name === apt.service);
+        const service = servicesData?.find(s => s.name === apt.service);
         if (service) {
           totalRevenue += parseFloat(service.price);
         }
@@ -70,7 +75,7 @@ export default function ReportsPage() {
     });
     
     // Clientes únicos
-    const uniqueClients = new Set(appointments?.map(a => a.client_whatsapp));
+    const uniqueClients = new Set(appointmentsData?.map(a => a.client_whatsapp));
     
     setStats({
       totalRevenue,
@@ -79,9 +84,77 @@ export default function ReportsPage() {
       appointmentsMonth,
       attendanceRate,
       totalClients: uniqueClients.size,
-      topServices: [], // TODO
-      topClients: [] // TODO
+      topServices: [],
+      topClients: []
     });
+  };
+
+  const getLast7DaysRevenue = () => {
+    const last7Days = [];
+    const servicesMap = new Map(services?.map(s => [s.name, s.price]) || []);
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayAppointments = appointments?.filter(a => 
+        a.date === dateStr && a.status === 'confirmed'
+      ) || [];
+      
+      const revenue = dayAppointments.reduce((sum, apt) => {
+        const price = servicesMap.get(apt.service) || 0;
+        return sum + parseFloat(price);
+      }, 0);
+      
+      last7Days.push({
+        date: dateStr,
+        label: date.toLocaleDateString('pt-PT', { weekday: 'short' }),
+        revenue: revenue,
+        percentage: 0 // calcular depois
+      });
+    }
+    
+    // Calcular porcentagens
+    const maxRevenue = Math.max(...last7Days.map(d => d.revenue), 1);
+    last7Days.forEach(day => {
+      day.percentage = (day.revenue / maxRevenue) * 100;
+    });
+    
+    return last7Days;
+  };
+
+  const getTopServices = () => {
+    const servicesCount = new Map();
+    const servicesMap = new Map(services?.map(s => [s.name, s.price]) || []);
+    
+    appointments?.forEach(apt => {
+      if (apt.status === 'confirmed') {
+        const current = servicesCount.get(apt.service) || { count: 0, revenue: 0 };
+        const price = servicesMap.get(apt.service) || 0;
+        
+        servicesCount.set(apt.service, {
+          count: current.count + 1,
+          revenue: current.revenue + parseFloat(price)
+        });
+      }
+    });
+    
+    const topServices = Array.from(servicesCount.entries()).map(([name, data]) => ({
+      name,
+      count: data.count,
+      revenue: data.revenue,
+      percentage: 0
+    }));
+    
+    // Calcular porcentagens
+    const maxCount = Math.max(...topServices.map(s => s.count), 1);
+    topServices.forEach(s => {
+      s.percentage = (s.count / maxCount) * 100;
+    });
+    
+    // Ordenar por quantidade
+    return topServices.sort((a, b) => b.count - a.count).slice(0, 5);
   };
 
   return (
@@ -136,9 +209,101 @@ export default function ReportsPage() {
 
       </div>
 
-      {/* Placeholder para gráficos futuros */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
-        <p className="text-zinc-400">📊 Gráficos e análises detalhadas em breve!</p>
+      {/* Faturamento dos Últimos 7 Dias */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-[#FFD700]" />
+          Faturamento dos Últimos 7 Dias
+        </h2>
+        
+        <div className="space-y-3">
+          {getLast7DaysRevenue().map((day) => (
+            <div key={day.date} className="flex items-center gap-3">
+              <span className="text-sm text-zinc-400 w-24">{day.label}</span>
+              <div className="flex-1 bg-zinc-800 rounded-full h-8 relative overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] h-full rounded-full transition-all"
+                  style={{ width: `${day.percentage}%` }}
+                />
+                <span className="absolute right-3 top-1 text-sm font-bold text-black">
+                  €{day.revenue.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Serviços Mais Vendidos */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+          <Award className="h-5 w-5 text-[#FFD700]" />
+          Serviços Mais Vendidos
+        </h2>
+        
+        <div className="space-y-3">
+          {getTopServices().map((service, index) => (
+            <div key={service.name} className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-[#FFD700] w-8">{index + 1}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-white">{service.name}</span>
+                  <span className="text-sm text-zinc-400">{service.count} agendamentos</span>
+                </div>
+                <div className="bg-zinc-800 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-[#FFD700] h-full rounded-full"
+                    style={{ width: `${service.percentage}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-lg font-bold text-[#FFD700]">€{service.revenue.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Comparativo */}
+      <div className="grid md:grid-cols-2 gap-6">
+        
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <h3 className="font-bold mb-4 text-white">📈 Crescimento</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Este mês:</span>
+              <span className="font-bold text-white">{stats.appointmentsMonth} agendamentos</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Esta semana:</span>
+              <span className="font-bold text-white">{stats.appointmentsWeek} agendamentos</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Hoje:</span>
+              <span className="font-bold text-white">{stats.appointmentsToday} agendamentos</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <h3 className="font-bold mb-4 text-white">💶 Receita</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Total confirmado:</span>
+              <span className="font-bold text-[#FFD700]">€{stats.totalRevenue.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Ticket médio:</span>
+              <span className="font-bold text-white">
+                €{stats.totalRevenue > 0 ? (stats.totalRevenue / appointments?.filter(a => a.status === 'confirmed').length).toFixed(2) : '0.00'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Total de clientes:</span>
+              <span className="font-bold text-white">{stats.totalClients}</span>
+            </div>
+          </div>
+        </div>
+        
       </div>
 
     </div>
