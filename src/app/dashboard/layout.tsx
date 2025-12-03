@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
-import { Calendar, LayoutDashboard, Settings, Users, Wrench, LogOut, Menu, X } from 'lucide-react';
+import { Calendar, LayoutDashboard, Settings, Users, Wrench, LogOut, Menu, X, MessageSquare } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -61,6 +61,12 @@ export default function DashboardLayout({
       icon: Calendar, 
       label: 'Agendamentos',
       active: pathname === '/dashboard/appointments'
+    },
+    {
+      href: '/dashboard/messages',
+      icon: MessageSquare,
+      label: 'Mensagens',
+      active: pathname === '/dashboard/messages'
     },
     { 
       href: '/dashboard/clients', 
