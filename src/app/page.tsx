@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Calendar, Scissors, Clock, TrendingUp, Check, Star } from 'lucide-react';
+import { Calendar, Scissors, Clock, TrendingUp, Check, Star, Shield, Zap } from 'lucide-react';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -49,12 +49,9 @@ export default function Home() {
     }
   };
 
-  const openCheckout = (planType: 'trial' | 'paid') => {
-    // Redirecionar para página de checkout ou abrir modal
-    if (planType === 'paid') {
-      // Por enquanto, redireciona para página de success com parâmetro do plano
-      window.location.href = `/checkout?plan=${planType}`;
-    }
+  const openCheckout = (planType: 'monthly' | 'annual') => {
+    // Redirecionar para página de checkout
+    window.location.href = `/checkout?plan=${planType}`;
   };
 
   return (
@@ -124,7 +121,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Pricing Section - APENAS 2 CARDS */}
+        {/* NEW PRICING SECTION - 3 OPTIONS (HORMOZI STYLE) */}
         <section className="py-20 bg-gradient-to-b from-black to-zinc-900">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -132,41 +129,166 @@ export default function Home() {
                 Escolha Seu Plano
               </h2>
               <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-                Teste grátis ou comece agora com desconto. Cancelamento gratuito a qualquer momento.
+                3 formas de começar. Escolha a que faz mais sentido para você.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               
-              {/* Option 1: Free Trial */}
-              <div className="rounded-3xl border-2 border-zinc-800 bg-zinc-900 p-8 hover:border-[#FFD700] transition-all">
+              {/* OPÇÃO 1: WIN YOUR MONEY BACK */}
+              <div className="rounded-3xl border-2 border-green-500 bg-gradient-to-br from-green-500/10 to-black p-8 hover:scale-105 transition-all">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Teste Grátis</h3>
-                  <p className="text-zinc-400 mb-4">Experimente sem compromisso</p>
+                  <div className="inline-flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm font-bold mb-4">
+                    <Shield className="h-4 w-4" />
+                    ZERO RISCO
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Experimente Com Garantia Total</h3>
+                  <p className="text-zinc-400 mb-4">Win Your Money Back</p>
                   
                   <div className="mb-4">
-                    <span className="text-4xl font-bold">€0</span>
-                    <span className="text-zinc-400 ml-2">agora</span>
+                    <span className="text-5xl font-bold text-green-400">€29</span>
+                    <span className="text-zinc-400 ml-2">/mês</span>
                   </div>
-                  <p className="text-sm text-zinc-400">€29/mês depois do período de teste</p>
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
+                  <p className="text-center text-green-400 font-bold mb-2">
+                    💰 GARANTIA HORMOZI
+                  </p>
+                  <p className="text-center text-sm text-zinc-300">
+                    Se não fizer <strong>€1000 em agendamentos</strong> em 30 dias, devolvemos seu €29!
+                  </p>
                 </div>
 
                 <div className="space-y-3 mb-8">
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>7 dias grátis</span>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
+                    <span className="text-sm">Sistema completo</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Sem cartão de crédito</span>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
+                    <span className="text-sm">Lembretes WhatsApp</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Cancele quando quiser</span>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
+                    <span className="text-sm">Relatórios completos</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Todos os recursos incluídos</span>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
+                    <span className="text-sm font-bold">Zero risco!</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => openCheckout('monthly')}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold transition-all hover:scale-105"
+                >
+                  COMEÇAR AGORA
+                </button>
+              </div>
+
+              {/* OPÇÃO 2: PAGUE MENOS AGORA (ANUAL) - MAIS ESCOLHIDO */}
+              <div className="rounded-3xl border-2 border-[#FFD700] bg-gradient-to-br from-zinc-900 to-black p-8 relative hover:scale-105 transition-all shadow-2xl shadow-[#FFD700]/20">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-[#FFD700] text-black px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2">
+                    <Star className="h-4 w-4 fill-black" />
+                    MAIS ESCOLHIDO
+                  </span>
+                </div>
+
+                <div className="text-center mb-6 mt-4">
+                  <div className="inline-flex items-center gap-2 bg-[#FFD700]/20 text-[#FFD700] px-4 py-2 rounded-full text-sm font-bold mb-4">
+                    <Zap className="h-4 w-4" />
+                    MELHOR OFERTA
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Economize €108 + Sem Compromisso Mensal</h3>
+                  <p className="text-zinc-400 mb-4">Pague 1x e esqueça</p>
+                  
+                  <div className="mb-2">
+                    <span className="text-5xl font-bold text-[#FFD700]">€240</span>
+                    <span className="text-zinc-400 ml-2">/ano</span>
+                  </div>
+                  <p className="text-sm text-zinc-500 line-through">€348/ano (€29/mês)</p>
+                  <p className="text-lg font-bold text-green-400 mt-2">20% de desconto</p>
+                </div>
+
+                <div className="bg-[#FFD700]/10 border border-[#FFD700]/30 rounded-xl p-4 mb-6">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-300">✅ Economize:</span>
+                      <span className="font-bold text-[#FFD700]">€108/ano</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-300">✅ Pague 1x:</span>
+                      <span className="font-bold text-white">Sem mensalidades</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-300">✅ Churn:</span>
+                      <span className="font-bold text-green-400">5x menor</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-[#FFD700] flex-shrink-0" />
+                    <span className="text-sm">Tudo do plano mensal</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-[#FFD700] flex-shrink-0" />
+                    <span className="text-sm font-bold">Prioridade no suporte</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-[#FFD700] flex-shrink-0" />
+                    <span className="text-sm font-bold">Acesso a novos recursos primeiro</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-[#FFD700] flex-shrink-0" />
+                    <span className="text-sm">Sem preocupação com renovação</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => openCheckout('annual')}
+                  className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black py-4 rounded-xl font-bold hover:scale-105 transition-all shadow-lg"
+                >
+                  GARANTIR ANUAL AGORA
+                </button>
+              </div>
+
+              {/* OPÇÃO 3: TESTE GRÁTIS 7 DIAS */}
+              <div className="rounded-3xl border-2 border-zinc-800 bg-zinc-900 p-8 hover:border-blue-500 transition-all">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-sm font-bold mb-4">
+                    <Calendar className="h-4 w-4" />
+                    SEM COMPROMISSO
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Teste Grátis 7 Dias</h3>
+                  <p className="text-zinc-400 mb-4">Experimente sem pagar nada</p>
+                  
+                  <div className="mb-4">
+                    <span className="text-5xl font-bold text-blue-400">€0</span>
+                    <span className="text-zinc-400 ml-2">agora</span>
+                  </div>
+                  <p className="text-sm text-zinc-500">€29/mês depois do teste</p>
+                </div>
+
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                    <span className="text-sm">7 dias grátis</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                    <span className="text-sm">Sem cartão de crédito</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                    <span className="text-sm">Cancele quando quiser</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                    <span className="text-sm">Todos os recursos incluídos</span>
                   </div>
                 </div>
 
@@ -175,63 +297,19 @@ export default function Home() {
                     const form = document.getElementById('trial-form');
                     form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
-                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg font-bold transition-all"
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition-all"
                 >
                   COMEÇAR TESTE GRÁTIS
                 </button>
               </div>
 
-              {/* Option 2: Premium (MOST POPULAR) */}
-              <div className="rounded-3xl border-2 border-[#FFD700] bg-gradient-to-br from-zinc-900 to-black p-8 relative hover:scale-105 transition-all">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#FFD700] text-black px-4 py-1 rounded-full text-sm font-bold">
-                    MAIS ESCOLHIDO
-                  </span>
-                </div>
+            </div>
 
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Começar por €14</h3>
-                  <p className="text-zinc-400 mb-4">Economize €58 + Ganhe Bônus</p>
-                  
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold">€14</span>
-                    <span className="text-zinc-400 ml-2">hoje</span>
-                  </div>
-                  <p className="text-sm text-zinc-400">+ 2 MESES GRÁTIS (€58 de valor)</p>
-                  <p className="text-sm text-zinc-400 line-through">€29/mês depois</p>
-                </div>
-
-                <div className="space-y-3 mb-8">
-                  <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>2 meses grátis (economize €58)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Template WhatsApp Profissional (€29)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Todos os recursos premium</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Suporte prioritário</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-[#FFD700]" />
-                    <span>Configuração assistida</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => openCheckout('paid')}
-                  className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black py-3 rounded-lg font-bold hover:scale-105 transition-all"
-                >
-                  GARANTIR OFERTA AGORA
-                </button>
-              </div>
-
+            {/* Trust Badge */}
+            <div className="text-center mt-12">
+              <p className="text-zinc-500 text-sm">
+                ✅ Cancelamento gratuito a qualquer momento • 🔒 Pagamento 100% seguro • 🇵🇹 Suporte em português
+              </p>
             </div>
           </div>
         </section>
