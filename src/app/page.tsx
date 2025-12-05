@@ -49,11 +49,6 @@ export default function Home() {
     }
   };
 
-  const openCheckout = (planType: 'monthly' | 'annual') => {
-    // Redirecionar para página de checkout
-    window.location.href = `/checkout?plan=${planType}`;
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white">
       {/* Hero Section */}
@@ -179,12 +174,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => openCheckout('monthly')}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold transition-all hover:scale-105"
+                <a 
+                  href="/checkout/monthly"
+                  className="block w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold transition-all hover:scale-105 text-center"
                 >
                   COMEÇAR AGORA
-                </button>
+                </a>
               </div>
 
               {/* OPÇÃO 2: PAGUE MENOS AGORA (ANUAL) - MAIS ESCOLHIDO */}
@@ -248,12 +243,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => openCheckout('annual')}
-                  className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black py-4 rounded-xl font-bold hover:scale-105 transition-all shadow-lg"
+                <a 
+                  href="/checkout/annual"
+                  className="block w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black py-4 rounded-xl font-bold hover:scale-105 transition-all shadow-lg text-center"
                 >
                   GARANTIR ANUAL AGORA
-                </button>
+                </a>
               </div>
 
               {/* OPÇÃO 3: TESTE GRÁTIS 7 DIAS */}
