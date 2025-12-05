@@ -6,30 +6,45 @@ import Link from 'next/link';
 
 export default function MonthlyCheckoutPage() {
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const data = {
+      plan: 'monthly',
       name: formData.get('name') as string,
       email: formData.get('email') as string,
-      barbershopName: formData.get('barbershopName') as string,
-      whatsapp: formData.get('whatsapp') as string,
-      plan: 'monthly',
-      paymentMethod
+      whatsapp: formData.get('whatsapp') as string
     };
 
-    // TODO: Integrar com Stripe/PayPal
-    console.log('Dados do checkout mensal:', data);
-    
-    // Simulação de processamento
-    setTimeout(() => {
-      alert('🎉 Pagamento processado! Redirecionando para o dashboard...');
-      window.location.href = '/dashboard';
-    }, 2000);
+    // Validar campos
+    if (!data.name || !data.email || !data.whatsapp) {
+      alert('Por favor, preencha todos os campos');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao processar pagamento');
+      }
+
+      // Redirecionar para Stripe Checkout
+      window.location.href = result.url;
+    } catch (error: any) {
+      alert(error.message || 'Erro ao processar pagamento. Tente novamente.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,7 +71,7 @@ export default function MonthlyCheckoutPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
             <h2 className="text-2xl font-bold mb-6">Seus Dados</h2>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleCheckout} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-zinc-300">Nome Completo</label>
                 <input 
@@ -80,17 +95,6 @@ export default function MonthlyCheckoutPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-zinc-300">Nome da Barbearia</label>
-                <input 
-                  type="text" 
-                  name="barbershopName"
-                  placeholder="Barbearia Premium"
-                  required
-                  className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:border-[#FFD700] focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium mb-2 text-zinc-300">WhatsApp</label>
                 <input 
                   type="tel" 
@@ -99,42 +103,6 @@ export default function MonthlyCheckoutPage() {
                   required
                   className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:border-[#FFD700] focus:outline-none transition-all"
                 />
-              </div>
-
-              {/* Método de Pagamento */}
-              <div className="pt-4">
-                <label className="block text-sm font-medium mb-3 text-zinc-300">Método de Pagamento</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('stripe')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === 'stripe' 
-                        ? 'border-[#FFD700] bg-[#FFD700]/10' 
-                        : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
-                    }`}
-                  >
-                    <CreditCard className="h-6 w-6 mx-auto mb-2 text-[#FFD700]" />
-                    <p className="text-sm font-bold">Cartão de Crédito</p>
-                    <p className="text-xs text-zinc-500">Stripe</p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('paypal')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === 'paypal' 
-                        ? 'border-[#FFD700] bg-[#FFD700]/10' 
-                        : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
-                    }`}
-                  >
-                    <div className="h-6 w-6 mx-auto mb-2 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">
-                      PP
-                    </div>
-                    <p className="text-sm font-bold">PayPal</p>
-                    <p className="text-xs text-zinc-500">Rápido e seguro</p>
-                  </button>
-                </div>
               </div>
 
               <button 
@@ -146,7 +114,7 @@ export default function MonthlyCheckoutPage() {
               </button>
 
               <p className="text-xs text-zinc-500 text-center mt-4">
-                🔒 Pagamento 100% seguro e criptografado
+                🔒 Pagamento 100% seguro e criptografado via Stripe
               </p>
             </form>
           </div>

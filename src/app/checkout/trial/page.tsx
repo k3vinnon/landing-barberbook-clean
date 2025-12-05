@@ -8,42 +8,43 @@ export default function TrialCheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     const formData = new FormData(e.currentTarget);
     const data = {
+      plan: 'trial',
       name: formData.get('name') as string,
       email: formData.get('email') as string,
-      barbershopName: formData.get('barbershopName') as string,
-      whatsapp: formData.get('whatsapp') as string,
-      plan: 'trial'
+      whatsapp: formData.get('whatsapp') as string
     };
 
+    // Validar campos
+    if (!data.name || !data.email || !data.whatsapp) {
+      setError('Por favor, preencha todos os campos');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/trial', {
+      const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
 
-      if (response.redirected) {
-        window.location.href = response.url;
-        return;
-      }
-
       const result = await response.json();
 
-      if (!result.success) {
-        setError(result.error || 'Erro ao criar conta. Tente novamente.');
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar teste grátis');
       }
-    } catch (err: any) {
-      setError('Erro ao criar conta. Verifique sua conexão e tente novamente.');
+
+      // Redirecionar para Stripe Checkout
+      window.location.href = result.url;
+    } catch (error: any) {
+      setError(error.message || 'Erro ao criar teste grátis. Tente novamente.');
       setLoading(false);
     }
   };
@@ -72,7 +73,7 @@ export default function TrialCheckoutPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
             <h2 className="text-2xl font-bold mb-6">Comece Seu Teste Grátis</h2>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleCheckout} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-zinc-300">Nome Completo</label>
                 <input 
@@ -90,17 +91,6 @@ export default function TrialCheckoutPage() {
                   type="email" 
                   name="email"
                   placeholder="joao@exemplo.com"
-                  required
-                  className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:border-blue-400 focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-zinc-300">Nome da Barbearia</label>
-                <input 
-                  type="text" 
-                  name="barbershopName"
-                  placeholder="Barbearia Premium"
                   required
                   className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:border-blue-400 focus:outline-none transition-all"
                 />
