@@ -54,7 +54,15 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    console.log('=== DEBUG CHECKOUT ===');
+    console.log('Plan recebido:', plan);
+    console.log('Price ID usado:', priceIds[plan]);
+    console.log('Session config:', JSON.stringify(sessionConfig, null, 2));
+
     const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    console.log('Session URL criada:', session.url);
+    console.log('======================');
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
