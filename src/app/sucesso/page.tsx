@@ -6,13 +6,25 @@ import Link from 'next/link';
 
 export default function SuccessPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string>('');
 
   useEffect(() => {
     // Pegar session_id da URL
     const urlParams = new URLSearchParams(window.location.search);
     const session = urlParams.get('session_id');
     setSessionId(session);
+
+    // Pegar email do localStorage (salvo durante checkout)
+    const savedEmail = localStorage.getItem('checkout_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
   }, []);
+
+  const handleResendEmail = () => {
+    // TODO: Implementar lógica de reenvio de email
+    alert('Email reenviado com sucesso!');
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white">
@@ -47,16 +59,28 @@ export default function SuccessPage() {
                   <div className="flex-shrink-0 w-8 h-8 bg-[#FFD700] rounded-full flex items-center justify-center text-black font-bold">
                     1
                   </div>
-                  <div>
-                    <h3 className="font-bold mb-2">Acesse seu Dashboard</h3>
-                    <p className="text-sm text-zinc-400 mb-3">
-                      Faça login na plataforma e configure sua barbearia
-                    </p>
+                  <div className="w-full">
+                    <h3 className="font-bold mb-2">Verifique seu Email</h3>
+                    
+                    {/* Box de Email */}
+                    <div className="bg-blue-50 p-6 rounded-xl mb-4">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">📧 Próximo Passo:</h3>
+                      <p className="text-gray-700 mb-2">Enviamos um email com suas credenciais de acesso para:</p>
+                      <p className="font-bold text-gray-900 text-lg mb-3">{email || 'seu-email@exemplo.com'}</p>
+                      <p className="text-sm text-gray-600 mt-2 mb-3">Não recebeu? Verifique spam ou:</p>
+                      <button
+                        onClick={handleResendEmail}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+                      >
+                        Reenviar Email de Acesso
+                      </button>
+                    </div>
+
                     <Link
-                      href="/dashboard"
-                      className="inline-flex items-center gap-2 bg-[#FFD700] text-black px-6 py-3 rounded-xl font-bold hover:bg-[#FFA500] transition-all"
+                      href="/login"
+                      className="inline-flex items-center justify-center gap-2 bg-[#FFD700] text-black px-6 py-3 rounded-xl font-bold hover:bg-[#FFA500] transition-all w-full"
                     >
-                      Ir para Dashboard
+                      Ir para Login
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </div>

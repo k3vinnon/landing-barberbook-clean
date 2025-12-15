@@ -11,6 +11,17 @@ const priceIds = {
   'trial': 'price_1SamhdF4nbnoxp4fNhc8xnsf'
 };
 
+// Função para detectar URL base automaticamente
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'http://localhost:3000';
+};
+
 export async function POST(request: NextRequest) {
   try {
     const { plan, name, email, whatsapp } = await request.json();
@@ -30,6 +41,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const baseUrl = getBaseUrl();
+
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -43,8 +56,8 @@ export async function POST(request: NextRequest) {
         whatsapp: whatsapp,
         plan: plan
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/${plan}`,
+      success_url: `${baseUrl}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/checkout/${plan}`,
     };
 
     // Adicionar trial APENAS para plano "trial"
@@ -55,14 +68,16 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('=== DEBUG CHECKOUT ===');
+    console.log('Base URL detectada:', baseUrl);
     console.log('Plan recebido:', plan);
-    console.log('Price ID usado:', priceIds[plan]);
-    console.log('Session config:', JSON.stringify(sessionConfig, null, 2));
+    console.log('Price ID usado:', priceIds[plan as keyof typeof priceIds]);
+    console.log('Success URL:', sessionConfig.success_url);
+    console.log('Cancel URL:', sessionConfig.cancel_url);
+    console.log('======================');
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('Session URL criada:', session.url);
-    console.log('======================');
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
