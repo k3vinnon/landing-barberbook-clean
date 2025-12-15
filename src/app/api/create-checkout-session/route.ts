@@ -6,9 +6,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const priceIds = {
-  'monthly': 'price_1SameqF4nbnoxp4fqCnWuqVZ',
-  'annual': 'price_1Samg5F4nbnoxp4fgb7gxssl',
-  'trial': 'price_1SamhdF4nbnoxp4fNhc8xnsf'
+  'monthly': 'price_1SegvMF4nbnoxp4fMNHqdnQQ',
+  'annual': 'price_1SegwdF4nbnoxp4fFnW6CM2E',
+  'trial': 'price_1SegxnF4nbnoxp4fjmPmmfob'
 };
 
 // Função para detectar URL base automaticamente
