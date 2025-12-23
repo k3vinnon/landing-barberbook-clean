@@ -13,6 +13,7 @@ type Service = {
   description?: string
   icon: string
   user_id: string
+  is_active: boolean
 }
 
 export default function ServicesPage() {
@@ -85,6 +86,47 @@ export default function ServicesPage() {
       console.error('❌ Erro ao carregar serviços:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const toggleServiceStatus = async (serviceId: string) => {
+    try {
+      // Optimistic update - atualiza UI imediatamente
+      setServices(prevServices =>
+        prevServices.map(service =>
+          service.id === serviceId
+            ? { ...service, is_active: !service.is_active }
+            : service
+        )
+      )
+
+      // Busca o estado atual do serviço
+      const { data: service, error: fetchError } = await supabase
+        .from('services')
+        .select('is_active')
+        .eq('id', serviceId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Atualiza no banco com o valor invertido
+      const { error: updateError } = await supabase
+        .from('services')
+        .update({ is_active: !service.is_active })
+        .eq('id', serviceId)
+
+      if (updateError) throw updateError
+
+      console.log('✅ Status do serviço atualizado com sucesso')
+    } catch (error) {
+      console.error('❌ Erro ao atualizar status do serviço:', error)
+      
+      // Reverte o optimistic update em caso de erro
+      if (barberId) {
+        await loadServices(barberId)
+      }
+      
+      alert('Erro ao atualizar status do serviço. Tente novamente.')
     }
   }
 
@@ -255,7 +297,11 @@ export default function ServicesPage() {
             {services.map((service) => (
               <div
                 key={service.id}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 hover:border-[#FFD700]/50 transition-all"
+                className={`rounded-2xl border bg-zinc-900 p-6 transition-all ${
+                  service.is_active
+                    ? 'border-zinc-800 hover:border-[#FFD700]/50'
+                    : 'border-zinc-800/50 opacity-60'
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -267,6 +313,21 @@ export default function ServicesPage() {
                       <p className="text-sm text-zinc-400">{service.duration} minutos</p>
                     </div>
                   </div>
+                  
+                  {/* Toggle Ativo/Inativo */}
+                  <button
+                    onClick={() => toggleServiceStatus(service.id)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      service.is_active ? 'bg-green-600' : 'bg-gray-400'
+                    }`}
+                    title={service.is_active ? 'Serviço ativo' : 'Serviço inativo'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        service.is_active ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
 
                 {service.description && (
